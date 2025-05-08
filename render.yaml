@@ -115,6 +115,30 @@ services:
       sizeGB: 1
     autoDeploy: false
 
+  # Main COSMO application
+  - type: web
+    name: cosmo-main
+    env: node
+    buildCommand: |
+      npm install
+      cd form-docentes && npm install && npm run build
+      cd ../form-acudientes && npm install && npm run build
+      cd ../form-estudiantes && npm install && npm run build
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: DOCENTES_TOKEN
+        value: DocToken123
+      - key: ACUDIENTES_TOKEN
+        value: AcuToken456
+      - key: ESTUDIANTES_TOKEN
+        value: EstToken789
+    healthCheckPath: /
+    autoDeploy: true
+
 # Global environment variables
 envVarGroups:
   - name: common-env

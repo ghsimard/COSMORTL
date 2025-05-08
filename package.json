@@ -1,44 +1,20 @@
 {
-  "name": "cosmo-project",
+  "name": "cosmo-main",
   "version": "1.0.0",
-  "description": "COSMO Project - Educational Survey and Statistics System",
+  "description": "COSMO Project Main Application",
   "main": "server.js",
-  "engines": {
-    "node": ">=16",
-    "npm": ">=7"
-  },
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js",
-    "build": "npm run build-docentes && npm run build-acudientes && npm run build-estudiantes && npm run build-stats",
-    "build-docentes": "cd form-docentes && npm install && npm run build",
-    "build-acudientes": "cd form-acudientes && npm install && npm run build",
-    "build-estudiantes": "cd form-estudiantes && npm install && npm run build",
-    "build-stats": "cd Stats/frontend && npm install && npm run build",
-    "test": "echo 'No tests specified'"
+    "build": "bash -c 'cd form-docentes && npm install && npm run build && cd ../form-acudientes && npm install && npm run build && cd ../form-estudiantes && npm install && npm run build'",
+    "postinstall": "npm run build"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ghsimard/COSMORTL.git"
-  },
-  "keywords": [
-    "education",
-    "survey",
-    "statistics"
-  ],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/ghsimard/COSMORTL/issues"
-  },
-  "homepage": "https://github.com/ghsimard/COSMORTL#readme",
   "dependencies": {
     "express": "^4.18.2",
-    "node-fetch": "^2.6.7",
-    "path": "^0.12.7",
-    "pg": "^8.15.6"
+    "pg": "^8.11.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
   },
-  "devDependencies": {
-    "nodemon": "^3.0.1"
+  "engines": {
+    "node": ">=14.0.0"
   }
 }
