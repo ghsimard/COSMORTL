@@ -1,9 +1,9 @@
 export const config = {
   ports: {
     frontend: 4000,
-    backend: 4001
+    backend: 3000
   },
   api: {
-    baseUrl: 'http://localhost:4001'
+    baseUrl: ''
   }
 }; 

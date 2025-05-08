@@ -5,8 +5,8 @@ import { config } from '../config';
 export const getFrequencyRatings = async (school?: string): Promise<FrequencyData[]> => {
   try {
     const url = school 
-      ? `${config.api.baseUrl}/api/frequency-ratings?school=${encodeURIComponent(school)}`
-      : `${config.api.baseUrl}/api/frequency-ratings`;
+      ? `/api/frequency-ratings?school=${encodeURIComponent(school)}`
+      : `/api/frequency-ratings`;
     
     console.log('Fetching frequency ratings from:', url);
     

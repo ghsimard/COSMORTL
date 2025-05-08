@@ -151,12 +151,15 @@ function App() {
     };
     
     try {
-      // Submit the form data directly to the proxy server
-      const response = await fetch('http://localhost/api/submit-form', {
+      // Use a hardcoded absolute URL that will definitely work
+      const serverUrl = 'http://localhost:3000';
+      console.log("Submitting form to:", `${serverUrl}/api/submit-form`);
+      
+      const response = await fetch(`${serverUrl}/api/submit-form`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Referer': 'http://localhost/docentes/DocToken123'
+          'Referer': 'http://localhost:3000/docentes/DocToken123'
         },
         body: JSON.stringify(userFormData)
       });
@@ -202,7 +205,11 @@ function App() {
     // Only fetch new suggestions if we have 3 or more characters
     if (value.length >= 3) {
       try {
-        const response = await fetch(`/api/search-schools?q=${encodeURIComponent(value)}`);
+        // Use the same hardcoded URL for consistency with form submission
+        const serverUrl = 'http://localhost:3000';
+        console.log("Searching schools at:", `${serverUrl}/api/search-schools?q=${encodeURIComponent(value)}`);
+        
+        const response = await fetch(`${serverUrl}/api/search-schools?q=${encodeURIComponent(value)}`);
         if (response.ok) {
           const suggestions = await response.json();
           if (suggestions.length > 0) {

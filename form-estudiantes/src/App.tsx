@@ -10,7 +10,6 @@ interface FormData {
   teachingGradesEarly: string[];
   teachingGradesLate: string[];
   schedule: string;
-  feedbackSources: string[];
   comunicacion: FrequencyRatings;
   practicas_pedagogicas: FrequencyRatings;
   convivencia: FrequencyRatings;
@@ -33,7 +32,6 @@ function App() {
     teachingGradesEarly: [],
     teachingGradesLate: [],
     schedule: '',
-    feedbackSources: [],
     comunicacion: {},
     practicas_pedagogicas: {},
     convivencia: {}
@@ -61,7 +59,7 @@ function App() {
     }));
   };
 
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>, section: 'teachingGradesEarly' | 'teachingGradesLate' | 'feedbackSources') => {
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>, section: 'teachingGradesEarly' | 'teachingGradesLate') => {
     const { value, checked } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -105,11 +103,6 @@ function App() {
       alert('Por favor, seleccione su jornada de trabajo.');
       return;
     }
-
-    if (formData.feedbackSources.length === 0) {
-      alert('Por favor, seleccione al menos una fuente de retroalimentación.');
-      return;
-    }
     
     // Check if all frequency rating questions are answered
     const validateFrequencySection = (questions: string[], section: SectionKey) => {
@@ -150,7 +143,6 @@ function App() {
           teachingGradesEarly: [],
           teachingGradesLate: [],
           schedule: '',
-          feedbackSources: [],
           comunicacion: {},
           practicas_pedagogicas: {},
           convivencia: {}
@@ -433,30 +425,6 @@ function App() {
                     />
                     <label htmlFor={`schedule-${schedule}`} className="ml-3 block text-sm text-gray-700">
                       {schedule}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Feedback Sources - now question 5 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                5. ¿De quién recibe usted retroalimentación sobre su desempeño como docente? (múltiple respuesta) <span className="text-red-600">*</span>
-              </label>
-              <div className="mt-4 space-y-4">
-                {['Rector/a', 'Coordinador/a', 'Otros/as docentes', 'Acudientes', 'Estudiantes', 'Otros', 'Ninguno'].map((source) => (
-                  <div key={source} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id={`feedback-${source}`}
-                      value={source}
-                      checked={formData.feedbackSources.includes(source)}
-                      onChange={(e) => handleCheckboxChange(e, 'feedbackSources')}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor={`feedback-${source}`} className="ml-3 block text-sm text-gray-700">
-                      {source}
                     </label>
                   </div>
                 ))}
