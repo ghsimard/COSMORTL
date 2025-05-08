@@ -2,24 +2,26 @@
   "name": "cosmo-project",
   "version": "1.0.0",
   "description": "COSMO Project - Educational Survey and Statistics System",
-  "main": "proxy-server.js",
+  "main": "server.js",
   "engines": {
     "node": ">=16",
     "npm": ">=7"
   },
   "scripts": {
-    "start": "node proxy-server.js",
-    "dev": "nodemon proxy-server.js",
-    "build": "echo 'No build step needed for proxy server'",
-    "test": "echo 'No tests specified'",
-    "postinstall": "echo 'Ready to run!'"
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "build": "npm run build-docentes && npm run build-acudientes && npm run build-estudiantes && npm run build-stats",
+    "build-docentes": "cd form-docentes && npm install && npm run build",
+    "build-acudientes": "cd form-acudientes && npm install && npm run build",
+    "build-estudiantes": "cd form-estudiantes && npm install && npm run build",
+    "build-stats": "cd Stats/frontend && npm install && npm run build",
+    "test": "echo 'No tests specified'"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ghsimard/COSMORTL.git"
   },
   "keywords": [
-    "proxy",
     "education",
     "survey",
     "statistics"
@@ -32,9 +34,8 @@
   "homepage": "https://github.com/ghsimard/COSMORTL#readme",
   "dependencies": {
     "express": "^4.18.2",
-    "http-proxy-middleware": "^2.0.6",
     "path": "^0.12.7",
-    "url": "^0.11.1"
+    "pg": "^8.11.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

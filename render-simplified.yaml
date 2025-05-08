@@ -1,0 +1,42 @@
+services:
+  # Single web service for all applications
+  - type: web
+    name: cosmo-integrated
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: DOCENTES_TOKEN
+        generateValue: true
+      - key: ACUDIENTES_TOKEN
+        generateValue: true
+      - key: ESTUDIANTES_TOKEN
+        generateValue: true
+      - key: STATS_TOKEN
+        generateValue: true
+    autoDeploy: true
+
+  # PostgreSQL Database
+  - type: pserv
+    name: cosmo-postgres
+    plan: free
+    env: docker
+    disk:
+      name: data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 1
+    autoDeploy: false
+
+# Global environment variables
+envVarGroups:
+  - name: common-env
+    envVars:
+      - key: TZ
+        value: America/Bogota 
