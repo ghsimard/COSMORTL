@@ -25,52 +25,32 @@ if (process.env.NODE_ENV === 'production') {
 
 // Configure PostgreSQL connection (if DATABASE_URL is provided)
 let pool;
-const useMockData = false; // Always attempt to use the database
+const useMockData = !process.env.DATABASE_URL;
 
-try {
-  if (process.env.DATABASE_URL) {
-    console.log('DATABASE_URL is set. Attempting to connect to database...');
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-    });
-  } else {
-    console.log('DATABASE_URL not set. Using default local database connection...');
-    // Connect to a default local PostgreSQL database
-    pool = new Pool({
-      user: 'postgres',
-      host: 'localhost',
-      database: 'COSMO_RLT',
-      password: 'postgres',
-      port: 5432
-    });
-  }
-
+if (process.env.DATABASE_URL) {
+  console.log('DATABASE_URL is set. Attempting to connect to database...');
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
   // Test database connection
   pool.query('SELECT NOW()', (err, res) => {
     if (err) {
       console.error('Database connection error:', err.stack);
-      console.log('Using mock data for all operations due to connection error.');
     } else {
-      console.log('Database connected successfully:', res.rows[0]);
+      console.log('Database connected successfully');
     }
   });
-} catch (error) {
-  console.error('Error setting up database connection:', error);
-  console.log('Using mock data for all operations due to setup error.');
+} else {
+  console.log('DATABASE_URL not set. Using mock data for all operations.');
 }
-
-// Helper function to check if database is available
-const isDatabaseAvailable = () => {
-  return pool !== undefined && pool !== null;
-};
 
 // Access tokens - simplified to avoid special characters
 const ACCESS_TOKENS = {
   'docentes': process.env.DOCENTES_TOKEN || 'DocToken123',
   'acudientes': process.env.ACUDIENTES_TOKEN || 'AcuToken456',
-  'estudiantes': process.env.ESTUDIANTES_TOKEN || 'EstToken789',
-  'stats': process.env.STATS_TOKEN || 'StatsToken012'
+  'estudiantes': process.env.ESTUDIANTES_TOKEN || 'EstToken789'
 };
 
 // MIME type helper
@@ -169,7 +149,7 @@ app.get('/api/search-schools', async (req, res) => {
   }
 
   try {
-    if (isDatabaseAvailable()) {
+    if (pool && !useMockData) {
       // Query the rectores table using the correct column name
       console.log('Searching in database for:', query);
       const result = await pool.query(
@@ -209,7 +189,7 @@ app.post('/api/search-schools', async (req, res) => {
   }
 
   try {
-    if (isDatabaseAvailable()) {
+    if (pool && !useMockData) {
       // Query the rectores table using the correct column name
       console.log('Searching in database for:', query);
       const result = await pool.query(
@@ -534,32 +514,21 @@ app.use('/stats/:token', (req, res, next) => {
 }, express.static(path.join(__dirname, 'Stats', 'frontend', 'build')));
 
 // Catch-all for client-side routing in React apps
-app.get('/docentes/:token/*', (req, res, next) => {
-  if (req.params.token !== ACCESS_TOKENS['docentes']) {
+app.get('/:token', (req, res) => {
+  const token = req.params.token;
+  let appPath;
+  
+  if (token === ACCESS_TOKENS.docentes) {
+    appPath = path.join(__dirname, 'form-docentes', 'build', 'index.html');
+  } else if (token === ACCESS_TOKENS.acudientes) {
+    appPath = path.join(__dirname, 'form-acudientes', 'build', 'index.html');
+  } else if (token === ACCESS_TOKENS.estudiantes) {
+    appPath = path.join(__dirname, 'form-estudiantes', 'build', 'index.html');
+  } else {
     return res.status(403).send('Access Denied: Invalid Token');
   }
-  res.sendFile(path.join(__dirname, 'form-docentes', 'build', 'index.html'));
-});
-
-app.get('/acudientes/:token/*', (req, res, next) => {
-  if (req.params.token !== ACCESS_TOKENS['acudientes']) {
-    return res.status(403).send('Access Denied: Invalid Token');
-  }
-  res.sendFile(path.join(__dirname, 'form-acudientes', 'build', 'index.html'));
-});
-
-app.get('/estudiantes/:token/*', (req, res, next) => {
-  if (req.params.token !== ACCESS_TOKENS['estudiantes']) {
-    return res.status(403).send('Access Denied: Invalid Token');
-  }
-  res.sendFile(path.join(__dirname, 'form-estudiantes', 'build', 'index.html'));
-});
-
-app.get('/stats/:token/*', (req, res, next) => {
-  if (req.params.token !== ACCESS_TOKENS['stats']) {
-    return res.status(403).send('Access Denied: Invalid Token');
-  }
-  res.sendFile(path.join(__dirname, 'Stats', 'frontend', 'build', 'index.html'));
+  
+  safeServeStaticFile(appPath, null, 'text/html', res);
 });
 
 // Welcome page (root route)
@@ -614,22 +583,6 @@ const frequencyMappings = {
           estudiantes: "Mis profesores me dejan actividades para hacer en casa, las cuales necesitan el apoyo de mis acudientes.",
           acudientes: "Los profesores promueven actividades para que apoye en su proceso de aprendizaje a los estudiantes que tengo a cargo."
         }
-      },
-      {
-        displayText: "Las familias reciben información veraz acerca de las capacidades y/o talentos de los estudiantes, independiente de su condición de aprendizaje.",
-        questionMappings: {
-          docentes: "Informo a los acudientes sobre las capacidades y/o talentos de sus estudiantes, independiente de su condición de aprendizaje.",
-          estudiantes: "Mis profesores le cuentan a mis acudientes sobre mis capacidades y/o talentos, independiente de mi condición de aprendizaje.",
-          acudientes: "Recibo información veraz acerca de las capacidades y/o talentos de los estudiantes, independiente de su condición de aprendizaje."
-        }
-      },
-      {
-        displayText: "Cuando hay dificultades, las familias pueden reunirse con los directivos docentes para encontrar soluciones de manera conjunta.",
-        questionMappings: {
-          docentes: "Cuando hay dificultades, los acudientes pueden reunirse con los directivos docentes del colegio para encontrar soluciones de manera conjunta.",
-          estudiantes: "Cuando hay problemas en el colegio, mis acudientes pueden hablar con los directivos docentes para buscar soluciones entre todos.",
-          acudientes: "Cuando hay dificultades, puedo reunirme con los directivos docentes para encontrar soluciones de manera conjunta."
-        }
       }
     ]
   },
@@ -642,30 +595,6 @@ const frequencyMappings = {
           docentes: "Cuando preparo mis clases tengo en cuenta los intereses y necesidades de los estudiantes.",
           estudiantes: "Los profesores tienen en cuenta mis intereses y afinidades para escoger lo que vamos a hacer en clase.",
           acudientes: "Los profesores tienen en cuenta los intereses y necesidades de los estudiantes para escoger los temas que se van a tratar en clase."
-        }
-      },
-      {
-        displayText: "Los docentes explican los temas de clase de manera clara y comprensible.",
-        questionMappings: {
-          docentes: "Explico los temas de clase de manera clara y comprensible para mis estudiantes.",
-          estudiantes: "Mis profesores explican los temas de clase de una manera clara y comprensible.",
-          acudientes: "Los profesores explican los temas de clase de manera clara y comprensible para los estudiantes."
-        }
-      },
-      {
-        displayText: "Los docentes enseñan diversas formas de resolver problemas, más allá de memorizar información.",
-        questionMappings: {
-          docentes: "Enseño a mis estudiantes diversas formas de resolver problemas, más allá de memorizar información.",
-          estudiantes: "Mis profesores me enseñan diversas formas de resolver problemas, más allá de memorizar información.",
-          acudientes: "Los profesores enseñan a los estudiantes diversas formas de resolver problemas, más allá de memorizar información."
-        }
-      },
-      {
-        displayText: "Cuando los estudiantes presentan dificultades en sus desempeños, los docentes se preocupan por entender sus causas.",
-        questionMappings: {
-          docentes: "Cuando mis estudiantes presentan dificultades en sus desempeños, me preocupo por entender sus causas.",
-          estudiantes: "Cuando tengo dificultades con mis tareas y trabajos, mis profesores se preocupan por entender por qué me está costando trabajo.",
-          acudientes: "Cuando los estudiantes presentan dificultades en sus desempeños, los profesores se preocupan por entender sus causas."
         }
       }
     ]
@@ -680,30 +609,6 @@ const frequencyMappings = {
           estudiantes: "En el colegio mis compañeros y yo somos tratados con respeto sin importar nuestras creencias religiosas, género, orientación sexual, grupo étnico y capacidades o talentos.",
           acudientes: "En el colegio los estudiantes son respetuosos y solidarios entre ellos, comprendiendo y aceptando las creencias religiosas, el género, la orientación sexual, el grupo étnico y las capacidades o talentos de los demás."
         }
-      },
-      {
-        displayText: "Las normas del colegio son claras y las consecuencias de incumplirlas son justas.",
-        questionMappings: {
-          docentes: "Las normas del colegio son claras y las consecuencias de incumplirlas son justas.",
-          estudiantes: "Las normas del colegio son claras y cuando no las cumplo, las consecuencias que me aplican son justas.",
-          acudientes: "Las normas del colegio son claras y las consecuencias de incumplirlas son justas."
-        }
-      },
-      {
-        displayText: "Cuando hay conflictos, estos se resuelven de forma pacífica.",
-        questionMappings: {
-          docentes: "Cuando hay conflictos entre los estudiantes, estos se resuelven de forma pacífica.",
-          estudiantes: "Cuando hay peleas o desacuerdos en el colegio, estos se resuelven hablando y sin violencia.",
-          acudientes: "Cuando hay conflictos en el colegio, estos se resuelven de forma pacífica."
-        }
-      },
-      {
-        displayText: "Se promueve que los estudiantes se respeten y se valoren entre sí.",
-        questionMappings: {
-          docentes: "Promuevo que mis estudiantes se respeten y se valoren entre sí.",
-          estudiantes: "En el colegio nos enseñan a respetarnos y valorarnos entre compañeros.",
-          acudientes: "En el colegio promueven que los estudiantes se respeten y se valoren entre sí."
-        }
       }
     ]
   }
@@ -717,17 +622,6 @@ async function calculateFrequency(tableName, question, sectionColumn, school) {
 
   try {
     console.log(`Calculating frequency for ${tableName}, question: "${question}", column: ${sectionColumn}${school ? `, school: ${school}` : ''}`);
-    
-    // Check if pool is defined and the connection is active
-    if (!isDatabaseAvailable()) {
-      console.log('Database not available, using mock data for frequency ratings');
-      // Return mock frequency data
-      return {
-        S: Math.floor(Math.random() * 40) + 40, // 40-80%
-        A: Math.floor(Math.random() * 30) + 10, // 10-40%
-        N: Math.floor(Math.random() * 10)       // 0-10%
-      };
-    }
     
     let query = `
       SELECT 
@@ -753,20 +647,7 @@ async function calculateFrequency(tableName, question, sectionColumn, school) {
     
     if (result.rows.length === 0) {
       console.log(`No ratings found for question: ${question}`);
-      // Generate consistent mock data for questions that don't have data
-      // Use the question string to create a seed for consistent random values
-      const seed = question.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      const rand = (min, max) => {
-        const x = Math.sin(seed + 1) * 10000;
-        const r = x - Math.floor(x);
-        return Math.floor(r * (max - min + 1)) + min;
-      };
-      
-      return {
-        S: rand(40, 80),
-        A: rand(10, 40),
-        N: rand(0, 10)
-      };
+      return { S: 0, A: 0, N: 0 };
     }
     
     let total = 0;
@@ -797,12 +678,7 @@ async function calculateFrequency(tableName, question, sectionColumn, school) {
     };
   } catch (error) {
     console.error(`Error calculating frequency for ${tableName}, question: ${question}:`, error);
-    // Return mock data on error
-    return {
-      S: Math.floor(Math.random() * 40) + 40, // 40-80%
-      A: Math.floor(Math.random() * 30) + 10, // 10-40%
-      N: Math.floor(Math.random() * 10)       // 0-10%
-    };
+    return { S: 0, A: 0, N: 0 };
   }
 }
 
@@ -873,27 +749,6 @@ app.get('/api/frequency-ratings', async (req, res) => {
 app.get('/api/monitoring', async (req, res) => {
   try {
     console.log('Handling monitoring request');
-
-    // If no database connection, return mock data
-    if (!isDatabaseAvailable()) {
-      console.log('Database not available, using mock data for monitoring');
-      
-      // Create mock monitoring data with the schools from the mockSchools array
-      const mockMonitoringData = mockSchools.map(schoolName => {
-        return {
-          schoolName: schoolName,
-          rectorName: `Rector de ${schoolName}`,
-          submissions: {
-            docentes: Math.floor(Math.random() * 50) + 5,
-            estudiantes: Math.floor(Math.random() * 100) + 20,
-            acudientes: Math.floor(Math.random() * 70) + 10
-          }
-        };
-      });
-      
-      console.log(`Returning mock monitoring data with ${mockMonitoringData.length} schools`);
-      return res.json(mockMonitoringData);
-    }
 
     // Get actual school names from the database
     const schoolsQuery = `

@@ -1,16 +1,18 @@
 #!/bin/bash
 
-# Kill any existing server process
-pkill -f "node server.js" || true
+# Kill any existing Node.js processes
+pkill -f "node" || true
 
-# Set DATABASE_URL environment variable - using the correct database name COSMO_RLT (uppercase)
-# Update credentials if needed
+# Start the main server
+echo "Starting main server..."
 export DATABASE_URL="postgres://localhost:5432/COSMO_RLT"
+node server.js &
 
-# Optional: check if there's a way to test database connection
-echo "Starting server with DATABASE_URL configured to connect to COSMO_RLT..."
-echo "Make sure PostgreSQL is running with the COSMO_RLT database."
-echo "The server will search the 'rectores' table, column 'nombre_de_la_institucion_educativa_en_la_actualmente_desempena_'"
+# Wait for the server to start
+sleep 5
 
-# Start the server
-node server.js 
+echo "All services are running!"
+echo "Access the applications at:"
+echo "- Docentes Form: http://localhost:3000/DocToken123"
+echo "- Acudientes Form: http://localhost:3000/AcuToken456"
+echo "- Estudiantes Form: http://localhost:3000/EstToken789" 
