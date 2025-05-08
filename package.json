@@ -1,16 +1,40 @@
 {
-  "name": "cosmo-proxy",
+  "name": "cosmo-project",
   "version": "1.0.0",
-  "description": "Proxy server for COSMO applications with complex URL access",
+  "description": "COSMO Project - Educational Survey and Statistics System",
   "main": "proxy-server.js",
+  "engines": {
+    "node": ">=16",
+    "npm": ">=7"
+  },
   "scripts": {
     "start": "node proxy-server.js",
-    "dev": "nodemon proxy-server.js"
+    "dev": "nodemon proxy-server.js",
+    "build": "echo 'No build step needed for proxy server'",
+    "test": "echo 'No tests specified'",
+    "postinstall": "echo 'Ready to run!'"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ghsimard/COSMORTL.git"
+  },
+  "keywords": [
+    "proxy",
+    "education",
+    "survey",
+    "statistics"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ghsimard/COSMORTL/issues"
+  },
+  "homepage": "https://github.com/ghsimard/COSMORTL#readme",
   "dependencies": {
-    "chalk": "^5.4.1",
     "express": "^4.18.2",
-    "http-proxy-middleware": "^2.0.6"
+    "http-proxy-middleware": "^2.0.6",
+    "path": "^0.12.7",
+    "url": "^0.11.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

@@ -5,7 +5,14 @@ const url = require('url');
 const fs = require('fs');
 
 const app = express();
-const port = 80;
+const port = process.env.PORT || 80;
+
+// Read environment variables for service URLs or use development defaults
+const DOCENTES_URL = process.env.DOCENTES_URL || 'http://localhost:3001';
+const ACUDIENTES_URL = process.env.ACUDIENTES_URL || 'http://localhost:3005';
+const ESTUDIANTES_URL = process.env.ESTUDIANTES_URL || 'http://localhost:3006';
+const STATS_FRONTEND_URL = process.env.STATS_FRONTEND_URL || 'http://localhost:4000';
+const STATS_BACKEND_URL = process.env.STATS_BACKEND_URL || 'http://localhost:4001';
 
 // Add body parsing middleware
 app.use(express.json({ limit: '50mb' }));
@@ -13,10 +20,10 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Access tokens - simplified to avoid special characters
 const ACCESS_TOKENS = {
-  'docentes': 'DocToken123',
-  'acudientes': 'AcuToken456',
-  'estudiantes': 'EstToken789',
-  'stats': 'StatsToken012'
+  'docentes': process.env.DOCENTES_TOKEN || 'DocToken123',
+  'acudientes': process.env.ACUDIENTES_TOKEN || 'AcuToken456',
+  'estudiantes': process.env.ESTUDIANTES_TOKEN || 'EstToken789',
+  'stats': process.env.STATS_TOKEN || 'StatsToken012'
 };
 
 // CRITICAL: Direct handlers for specific problematic assets - these must come FIRST before any other middleware
@@ -584,19 +591,19 @@ const pathRewriter = (path, req) => {
 // Proxy configurations - use the common path rewriter
 const proxyConfigs = {
   'docentes': {
-    target: 'http://localhost:3001',
+    target: DOCENTES_URL,
     pathRewrite: pathRewriter
   },
   'acudientes': {
-    target: 'http://localhost:3005',
+    target: ACUDIENTES_URL,
     pathRewrite: pathRewriter
   },
   'estudiantes': {
-    target: 'http://localhost:3006',
+    target: ESTUDIANTES_URL,
     pathRewrite: pathRewriter
   },
   'stats': {
-    target: 'http://localhost:4000',
+    target: STATS_FRONTEND_URL,
     pathRewrite: (path, req) => {
       console.log(`Stats path rewrite: ${path}`);
       
@@ -636,16 +643,16 @@ const proxyConfigs = {
 // API backend configurations
 const apiConfigs = {
   'docentes': {
-    target: 'http://localhost:3001'
+    target: DOCENTES_URL
   },
   'acudientes': {
-    target: 'http://localhost:3005'
+    target: ACUDIENTES_URL
   },
   'estudiantes': {
-    target: 'http://localhost:3006'
+    target: ESTUDIANTES_URL
   },
   'stats': {
-    target: 'http://localhost:4001'
+    target: STATS_BACKEND_URL
   }
 };
 
@@ -1183,35 +1190,14 @@ app.get('/RTL', (req, res) => {
 
 // Dedicated route for LogoCosmo.png
 app.get('/images/LogoCosmo.png', (req, res) => {
-  const fs = require('fs');
-  const path = require('path');
-  
   console.log('Serving LogoCosmo.png via dedicated route handler');
   
-  // Use the Stats version of the file
+  // Primary path
   const imagePath = path.join(__dirname, 'Stats', 'frontend', 'build', 'images', 'LogoCosmo.png');
+  // Fallback path
+  const fallbackPath = path.join(__dirname, 'Stats', 'frontend', 'public', 'images', 'LogoCosmo.png');
   
-  fs.readFile(imagePath, (err, data) => {
-    if (err) {
-      console.error(`Error reading LogoCosmo.png from build: ${err.message}`);
-      // Try alternative path
-      const altImagePath = path.join(__dirname, 'Stats', 'frontend', 'public', 'images', 'LogoCosmo.png');
-      
-      fs.readFile(altImagePath, (altErr, altData) => {
-        if (altErr) {
-          console.error(`Error reading LogoCosmo.png from public: ${altErr.message}`);
-          return res.status(404).send('Image not found');
-        }
-        
-        res.setHeader('Content-Type', 'image/png');
-        res.send(altData);
-      });
-      return;
-    }
-    
-    res.setHeader('Content-Type', 'image/png');
-    res.send(data);
-  });
+  safeServeStaticFile(imagePath, fallbackPath, 'image/png', res);
 });
 
 // Routes for PDF generator logo images
@@ -1351,6 +1337,59 @@ app.get('/docentes/DocToken123/static/css/:filename', (req, res) => {
     res.send(data);
   });
 });
+
+// Add security headers for production environment
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    // Security headers
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval';");
+    next();
+  });
+}
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Server error:', err.stack);
+  
+  // Don't expose error details in production
+  if (process.env.NODE_ENV === 'production') {
+    res.status(500).send('Internal Server Error');
+  } else {
+    res.status(500).send(`Internal Server Error: ${err.message}`);
+  }
+});
+
+// Helper function to safely serve static files
+const safeServeStaticFile = (filePath, fallbackPath, contentType, res) => {
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      console.error(`Error reading file ${filePath}: ${err.message}`);
+      
+      // Try fallback path if provided
+      if (fallbackPath) {
+        fs.readFile(fallbackPath, (fallbackErr, fallbackData) => {
+          if (fallbackErr) {
+            console.error(`Error reading fallback file ${fallbackPath}: ${fallbackErr.message}`);
+            return res.status(404).send('File not found');
+          }
+          
+          res.setHeader('Content-Type', contentType);
+          res.send(fallbackData);
+        });
+        return;
+      }
+      
+      return res.status(404).send('File not found');
+    }
+    
+    res.setHeader('Content-Type', contentType);
+    res.send(data);
+  });
+};
 
 // Start server
 app.listen(port, () => {

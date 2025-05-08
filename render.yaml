@@ -1,34 +1,123 @@
 services:
+  # Main proxy server
   - type: web
-    name: cosmo-stats-backend
+    name: cosmo-proxy
     env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node proxy-server.js
+    envVars:
+      - key: PORT
+        value: 10000
+    autoDeploy: true
+
+  # Form Docentes application
+  - type: web
+    name: form-docentes
+    env: node
+    plan: free
+    rootDir: form-docentes
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
+      - key: PORT
+        value: 3001
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
         sync: false
-      - key: PORT
-        value: 4001
-    buildFilter:
-      paths:
-      - backend/**
-    rootDirectory: backend
+    autoDeploy: true
 
+  # Form Acudientes application
   - type: web
-    name: cosmo-stats-frontend
+    name: form-acudientes
     env: node
-    buildCommand: npm install && npm run build && npm install -g serve
-    startCommand: bash -c "cd frontend && serve -s build -l $PORT"
+    plan: free
+    rootDir: form-acudientes
+    buildCommand: npm install && npm run build
+    startCommand: npm start
     envVars:
+      - key: PORT
+        value: 3005
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+    autoDeploy: true
+
+  # Form Estudiantes application
+  - type: web
+    name: form-estudiantes
+    env: node
+    plan: free
+    rootDir: form-estudiantes
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 3006
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+    autoDeploy: true
+
+  # Stats Frontend application
+  - type: web
+    name: stats-frontend
+    env: node
+    plan: free
+    rootDir: Stats/frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm run serve
+    envVars:
+      - key: PORT
+        value: 4000
       - key: NODE_ENV
         value: production
       - key: REACT_APP_API_URL
-        value: https://cosmo-stats-backend.onrender.com
+        fromService:
+          name: stats-backend
+          type: web
+          property: url
+    autoDeploy: true
+
+  # Stats Backend application
+  - type: web
+    name: stats-backend
+    env: node
+    plan: free
+    rootDir: Stats/backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
       - key: PORT
-        value: 4000
-    buildFilter:
-      paths:
-      - frontend/**
-    rootDirectory: frontend 
+        value: 4001
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGIN
+        fromService:
+          name: stats-frontend
+          type: web
+          property: url
+    autoDeploy: true
+
+  # PostgreSQL Database
+  - type: pserv
+    name: cosmo-postgres
+    plan: free
+    env: docker
+    disk:
+      name: data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 1
+    autoDeploy: false
+
+# Global environment variables
+envVarGroups:
+  - name: common-env
+    envVars:
+      - key: TZ
+        value: America/Bogota 
