@@ -1,0 +1,11 @@
+.layout {
+  min-height: 100vh;
+}
+
+.ant-layout-content {
+  background: #fff;
+}
+
+.ant-layout-header {
+  border-bottom: 1px solid #f0f0f0;
+} 

@@ -1,0 +1,88 @@
+{
+  "name": "form-acudientes",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "homepage": "/acudientes/AcuToken456",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "proxy": "http://localhost:3005",
+  "dependencies": {
+    "@craco/craco": "^7.1.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@headlessui/react": "^2.2.2",
+    "@mui/icons-material": "^7.0.2",
+    "@mui/material": "^7.0.2",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^27.5.2",
+    "@types/node": "^22.14.1",
+    "@types/pg": "^8.11.13",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/xlsx": "^0.0.35",
+    "autoprefixer": "^9.8.8",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "pg": "^8.15.5",
+    "postcss": "^7.0.39",
+    "postcss-flexbugs-fixes": "^4.2.1",
+    "postcss-loader": "^4.2.0",
+    "postcss-normalize": "^8.0.1",
+    "postcss-preset-env": "^6.7.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1",
+    "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.2.17",
+    "typescript": "4.9.5",
+    "web-vitals": "^2.1.4",
+    "xlsx": "^0.18.5"
+  },
+  "scripts": {
+    "start": "node dist/server/index.js",
+    "start:dev": "PORT=3004 react-scripts start",
+    "prebuild": "npm install",
+    "build": "react-scripts build && tsc -p src/server/tsconfig.json && tsc -p scripts/tsconfig.json",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "server": "PORT=3005 ts-node --esm src/server/index.ts",
+    "import-rectores": "ts-node src/server/importRectores.ts",
+    "convert-types": "ts-node src/server/convertDataTypes.ts",
+    "deploy": "bash scripts/deploy.sh",
+    "prod:server": "NODE_ENV=production PORT=3005 ts-node --esm src/server/index.ts",
+    "build:server": "tsc -p src/server/tsconfig.json",
+    "generate-favicon": "node scripts/generate-favicon.js",
+    "migrate-table": "ts-node scripts/migrate-table-name.ts",
+    "dev": "PORT=3005 ts-node src/server/index.ts",
+    "migrate": "ts-node --esm src/server/migrations.ts",
+    "start:prod": "node dist/server/index.js"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "sharp": "^0.34.1",
+    "ts-node": "^10.9.2"
+  }
+}

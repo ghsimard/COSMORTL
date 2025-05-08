@@ -1,0 +1,17 @@
+[Unit]
+Description=Form Docentes Backend Service
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/form-docentes
+Environment=NODE_ENV=production
+Environment=PORT=3005
+Environment=DATABASE_URL=postgres://postgres:postgres@localhost:5432/form_docentes
+ExecStart=/usr/bin/node dist/server/index.js
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target 

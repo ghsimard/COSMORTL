@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Filler App</title>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 1200px;
+            margin-top: 2rem;
+            padding: 0 2rem;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-label {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        .form-control {
+            height: 3rem;
+            font-size: 1.1rem;
+        }
+        .btn-group {
+            margin-bottom: 1.5rem;
+        }
+        #fieldMapping, #otherGenderMapping {
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 1.5rem;
+            background-color: #f8f9fa;
+            border-radius: 0.5rem;
+        }
+        .mapping-row {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            align-items: center;
+        }
+        .mapping-row label {
+            min-width: 250px;
+            font-size: 1.1rem;
+        }
+        .mapping-row select {
+            flex: 1;
+            height: 2.5rem;
+            font-size: 1.1rem;
+        }
+        .btn-primary {
+            padding: 0.75rem 2rem;
+            font-size: 1.2rem;
+            margin-top: 1rem;
+        }
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 1.8rem;
+            z-index: 1000;
+        }
+        .card {
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            font-size: 1.3rem;
+            font-weight: 500;
+            padding: 1rem 1.5rem;
+        }
+        .card-body {
+            padding: 1.5rem;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+        <h1 class="text-center">PDF Filler App</h1>
+        
+        <div class="card">
+            <div class="card-header">File Selection</div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="excelFile" class="form-label">Excel File:</label>
+                    <input type="file" class="form-control" id="excelFile" accept=".xlsx,.xls">
+                </div>
+
+                <div class="form-group">
+                    <label for="pdfFile" class="form-label">PDF Template:</label>
+                    <input type="file" class="form-control" id="pdfFile" accept=".pdf">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Field Mapping</div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label class="form-label">PDF Fields to Excel Columns:</label>
+                    <div id="fieldMapping" class="border p-3 rounded"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Other Gender Mapping:</label>
+                    <div id="otherGenderMapping" class="border p-3 rounded"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <button id="generateBtn" class="btn btn-primary btn-lg" disabled>Generate PDFs</button>
+        </div>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">
+        Processing... Please wait.
+    </div>
+
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script src="js/xlsx.full.min.js"></script>
+    <script src="js/pdf-lib.min.js"></script>
+    <script src="js/jszip.min.js"></script>
+    <script>
+        // Simple sanitize function to replace Node.js sanitize-filename
+        function sanitizeFilename(filename) {
+            // Remove control characters
+            filename = filename.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+            
+            // Replace invalid characters with underscore
+            filename = filename.replace(/[<>:"/\\|?*]/g, '_');
+            
+            // Remove leading/trailing spaces and dots
+            filename = filename.trim().replace(/^\.+/, '');
+            
+            // Limit length
+            if (filename.length > 255) {
+                filename = filename.substring(0, 255);
+            }
+            
+            return filename;
+        }
+
+        // Simple date formatting function to replace date-fns
+        function formatDate(date) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        // Define the PDFGenerator object for web use
+        window.PDFGenerator = {
+            // Function to handle file selection in web environment
+            selectFile: function(accept) {
+                return new Promise((resolve) => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = accept;
+                    input.onchange = (e) => {
+                        const file = e.target.files[0];
+                        resolve(file);
+                    };
+                    input.click();
+                });
+            },
+
+            // Function to handle directory selection in web environment
+            selectDirectory: function() {
+                return new Promise((resolve) => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.webkitdirectory = true;
+                    input.directory = true;
+                    input.onchange = (e) => {
+                        const files = Array.from(e.target.files);
+                        const directory = files[0].webkitRelativePath.split('/')[0];
+                        resolve({ filePaths: [directory] });
+                    };
+                    input.click();
+                });
+            },
+
+            // Function to save file in web environment
+            saveFile: function(data, filename) {
+                const blob = new Blob([data], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            },
+
+            // Web-compatible version of the generate-pdfs function
+            generatePDFs: async function(excelFile, pdfFile, fieldMapping, otherGenderMapping) {
+                try {
+                    // Validate fieldMapping
+                    if (!fieldMapping || typeof fieldMapping !== 'object') {
+                        return { 
+                            success: false, 
+                            message: 'Field mapping is required and must be an object',
+                            errors: ['No field mapping provided']
+                        };
+                    }
+
+                    // Read Excel file
+                    const excelData = await excelFile.arrayBuffer();
+                    const workbook = XLSX.read(excelData);
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const data = XLSX.utils.sheet_to_json(sheet);
+
+                    // Group data by Entidad Territorial and sort by name within each group
+                    const groupedData = {};
+                    data.forEach(row => {
+                        const entidad = sanitizeFilename(row['Entidad Territorial'] || 'Unknown');
+                        if (!groupedData[entidad]) {
+                            groupedData[entidad] = [];
+                        }
+                        groupedData[entidad].push(row);
+                    });
+
+                    // Sort each group by name
+                    for (const entidad in groupedData) {
+                        groupedData[entidad].sort((a, b) => {
+                            const nameA = (a['Nombre(s) y Apellido(s) completo(s)'] || '').toLowerCase();
+                            const nameB = (b['Nombre(s) y Apellido(s) completo(s)'] || '').toLowerCase();
+                            return nameA.localeCompare(nameB);
+                        });
+                    }
+
+                    // Load PDF template
+                    const pdfData = await pdfFile.arrayBuffer();
+                    const pdfDoc = await PDFLib.PDFDocument.load(pdfData);
+                    const form = pdfDoc.getForm();
+
+                    let successCount = 0;
+                    const errors = [];
+
+                    // Create a zip file to store all PDFs
+                    const zip = new JSZip();
+
+                    // Add the original Excel file and PDF template to the zip with their original names
+                    const excelBlob = new Blob([excelData], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                    zip.file(excelFile.name, excelBlob);
+                    
+                    const pdfBlob = new Blob([pdfData], { type: 'application/pdf' });
+                    zip.file(pdfFile.name, pdfBlob);
+
+                    // Process each Entidad Territorial group
+                    for (const [entidad, rows] of Object.entries(groupedData)) {
+                        try {
+                            // Create a folder for this Entidad Territorial
+                            const folder = zip.folder(entidad);
+                            
+                            // Process each row in the group
+                            for (let i = 0; i < rows.length; i++) {
+                                try {
+                                    const row = rows[i];
+                                    const pdfDoc = await PDFLib.PDFDocument.load(pdfData);
+                                    const form = pdfDoc.getForm();
+
+                                    // Populate PDF fields using the user-provided mapping
+                                    for (const [pdfField, excelColumn] of Object.entries(fieldMapping)) {
+                                        try {
+                                            const field = form.getTextField(pdfField);
+                                            let value = row[excelColumn];
+                                            
+                                            if (value === undefined || value === null) {
+                                                continue;
+                                            }
+
+                                            value = value.toString();
+
+                                            // Handle special cases for specific fields
+                                            if (pdfField === 'Género' && value === 'Otro' && otherGenderMapping[pdfField]) {
+                                                const otherValue = row[otherGenderMapping[pdfField]];
+                                                if (otherValue) {
+                                                    value = otherValue;
+                                                }
+                                            }
+
+                                            // Format dates for fields containing "Fecha"
+                                            if (pdfField.toLowerCase().includes('fecha')) {
+                                                try {
+                                                    // Convert Excel serial number to date
+                                                    const numValue = parseFloat(value);
+                                                    if (!isNaN(numValue)) {
+                                                        // Excel dates are days since December 30, 1899
+                                                        // 25569 is the number of days between Dec 30, 1899 and Jan 1, 1970 (JS epoch)
+                                                        // Add one day to compensate for timezone differences
+                                                        const jsDate = new Date((numValue - 25568) * 86400 * 1000);
+                                                        
+                                                        // Format as dd/MM/yyyy
+                                                        value = formatDate(jsDate);
+                                                    }
+                                                } catch (e) {
+                                                    console.error(`Error formatting date for field ${pdfField}:`, e);
+                                                }
+                                            }
+
+                                            // Handle fields where Excel column header contains "Selección múltiple"
+                                            if (excelColumn && excelColumn.toLowerCase().includes('selección múltiple')) {
+                                                value = value.replace(/;/g, '   ');
+                                            }
+
+                                            field.setText(value);
+                                        } catch (e) {
+                                            errors.push(`Row ${i + 2}: Error setting field ${pdfField}: ${e.message}`);
+                                        }
+                                    }
+
+                                    // Generate filename with sequential number starting from 001
+                                    let filename = row['Nombre(s) y Apellido(s) completo(s)'] || `Record_${i + 1}`;
+                                    filename = sanitizeFilename(
+                                        filename
+                                            .replace(/\s+/g, '_')
+                                            .normalize('NFD')
+                                            .replace(/[\u0300-\u036f]/g, '')
+                                    );
+                                    const sequentialNumber = String(i + 1).padStart(3, '0');
+                                    const outputFilename = `${sequentialNumber}_${filename}.pdf`;
+
+                                    // Add PDF to the appropriate folder in the zip file
+                                    const pdfBytesOut = await pdfDoc.save();
+                                    folder.file(outputFilename, pdfBytesOut);
+                                    successCount++;
+                                } catch (e) {
+                                    errors.push(`Row ${i + 2}: Error processing - ${e.message}`);
+                                }
+                            }
+                        } catch (e) {
+                            errors.push(`Error processing Entidad Territorial ${entidad}: ${e.message}`);
+                        }
+                    }
+
+                    // Generate and download the zip file
+                    const zipBlob = await zip.generateAsync({ type: 'blob' });
+                    const zipUrl = URL.createObjectURL(zipBlob);
+                    const a = document.createElement('a');
+                    a.href = zipUrl;
+                    a.download = 'generated_pdfs.zip';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(zipUrl);
+
+                    return {
+                        success: true,
+                        message: `Generated ${successCount} PDFs. ${errors.length} errors.`,
+                        errors,
+                    };
+                } catch (e) {
+                    console.error('Error in generatePDFs:', e);
+                    return { success: false, message: `Error: ${e.message}`, errors: [] };
+                }
+            }
+        };
+
+        let pdfFields = [];
+        let excelColumns = [];
+        let fieldMapping = {};
+        let otherGenderMapping = {};
+
+        // Function to show loading state
+        function showLoading() {
+            document.getElementById('loading').style.display = 'flex';
+        }
+
+        // Function to hide loading state
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // Function to update the generate button state
+        function updateGenerateButton() {
+            const excelFile = document.getElementById('excelFile').files[0];
+            const pdfFile = document.getElementById('pdfFile').files[0];
+            const hasMapping = Object.keys(fieldMapping).length > 0;
+            document.getElementById('generateBtn').disabled = !(excelFile && pdfFile && hasMapping);
+        }
+
+        // Function to handle PDF file selection
+        document.getElementById('pdfFile').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                showLoading();
+                const arrayBuffer = await file.arrayBuffer();
+                const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+                const form = pdfDoc.getForm();
+                pdfFields = form.getFields().map(field => field.getName());
+                
+                // Create field mapping UI
+                const fieldMappingDiv = document.getElementById('fieldMapping');
+                fieldMappingDiv.innerHTML = '';
+                fieldMapping = {};
+                
+                pdfFields.forEach(field => {
+                    const row = document.createElement('div');
+                    row.className = 'mapping-row';
+                    
+                    const label = document.createElement('label');
+                    label.textContent = field;
+                    label.style.minWidth = '250px';
+                    
+                    const select = document.createElement('select');
+                    select.className = 'form-select';
+                    select.innerHTML = '<option value="">Select Excel Column</option>';
+                    
+                    if (excelColumns.length > 0) {
+                        excelColumns.forEach(column => {
+                            const option = document.createElement('option');
+                            option.value = column;
+                            option.textContent = column;
+                            
+                            // Auto-match if column name matches PDF field name
+                            if (column === field) {
+                                option.selected = true;
+                                fieldMapping[field] = column;
+                            }
+                            
+                            select.appendChild(option);
+                        });
+                    }
+                    
+                    select.addEventListener('change', (e) => {
+                        fieldMapping[field] = e.target.value;
+                        updateGenerateButton();
+                    });
+                    
+                    row.appendChild(label);
+                    row.appendChild(select);
+                    fieldMappingDiv.appendChild(row);
+                });
+
+                // Create other gender mapping UI
+                const otherGenderMappingDiv = document.getElementById('otherGenderMapping');
+                otherGenderMappingDiv.innerHTML = '';
+                otherGenderMapping = {};
+                
+                pdfFields.forEach(field => {
+                    if (field === 'Género') {
+                        const row = document.createElement('div');
+                        row.className = 'mapping-row';
+                        
+                        const label = document.createElement('label');
+                        label.textContent = 'Other Gender Column';
+                        label.style.minWidth = '250px';
+                        
+                        const select = document.createElement('select');
+                        select.className = 'form-select';
+                        select.innerHTML = '<option value="">Select Excel Column</option>';
+                        
+                        if (excelColumns.length > 0) {
+                            excelColumns.forEach(column => {
+                                const option = document.createElement('option');
+                                option.value = column;
+                                option.textContent = column;
+                                
+                                // Auto-match if column name contains "Otro" or "Other"
+                                if (column.toLowerCase().includes('otro') || column.toLowerCase().includes('other')) {
+                                    option.selected = true;
+                                    otherGenderMapping[field] = column;
+                                }
+                                
+                                select.appendChild(option);
+                            });
+                        }
+                        
+                        select.addEventListener('change', (e) => {
+                            otherGenderMapping[field] = e.target.value;
+                        });
+                        
+                        row.appendChild(label);
+                        row.appendChild(select);
+                        otherGenderMappingDiv.appendChild(row);
+                    }
+                });
+
+                updateGenerateButton();
+            } catch (error) {
+                console.error('Error loading PDF:', error);
+                alert('Error loading PDF file. Please try again.');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Function to handle Excel file selection
+        document.getElementById('excelFile').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                showLoading();
+                const arrayBuffer = await file.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer);
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                excelColumns = XLSX.utils.sheet_to_json(sheet, { header: 1 })[0];
+                
+                // Update all select elements with Excel columns
+                document.querySelectorAll('select').forEach(select => {
+                    const currentValue = select.value;
+                    select.innerHTML = '<option value="">Select Excel Column</option>';
+                    excelColumns.forEach(column => {
+                        const option = document.createElement('option');
+                        option.value = column;
+                        option.textContent = column;
+                        
+                        // If we already have a mapping, keep it
+                        if (column === currentValue) {
+                            option.selected = true;
+                        } 
+                        // Otherwise, try to auto-match based on field name
+                        else if (currentValue === '' && pdfFields.length > 0) {
+                            const fieldName = select.closest('.mapping-row')?.querySelector('label')?.textContent;
+                            if (fieldName && column === fieldName) {
+                                option.selected = true;
+                                if (fieldName === 'Género') {
+                                    otherGenderMapping[fieldName] = column;
+                                } else {
+                                    fieldMapping[fieldName] = column;
+                                }
+                            }
+                        }
+                        
+                        select.appendChild(option);
+                    });
+                });
+
+                updateGenerateButton();
+            } catch (error) {
+                console.error('Error loading Excel:', error);
+                alert('Error loading Excel file. Please try again.');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Function to handle PDF generation
+        document.getElementById('generateBtn').addEventListener('click', async () => {
+            const excelFile = document.getElementById('excelFile').files[0];
+            const pdfFile = document.getElementById('pdfFile').files[0];
+            
+            if (!excelFile || !pdfFile || Object.keys(fieldMapping).length === 0) {
+                alert('Please select both files and complete the field mapping.');
+                return;
+            }
+
+            try {
+                showLoading();
+                const result = await window.PDFGenerator.generatePDFs(
+                    excelFile,
+                    pdfFile,
+                    fieldMapping,
+                    otherGenderMapping
+                );
+
+                if (result.success) {
+                    alert(result.message);
+                } else {
+                    alert(`Error: ${result.message}`);
+                }
+            } catch (error) {
+                console.error('Error generating PDFs:', error);
+                alert('Error generating PDFs. Please try again.');
+            } finally {
+                hideLoading();
+            }
+        });
+    </script>
+  </body>
+</html>

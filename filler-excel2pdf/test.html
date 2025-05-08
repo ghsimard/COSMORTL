@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .file-list {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .file-item {
+            margin-bottom: 5px;
+        }
+    </style>
+    <script src="test-static.js"></script>
+</head>
+<body>
+    <h1>Static File Test Page</h1>
+    <p>This is a test page to verify that static file serving is working correctly.</p>
+    
+    <h2>JavaScript Files:</h2>
+    <div class="file-list" id="js-files">
+        Loading...
+    </div>
+    
+    <h2>CSS Files:</h2>
+    <div class="file-list" id="css-files">
+        Loading...
+    </div>
+    
+    <script>
+        // Function to check if a file exists
+        async function checkFile(url) {
+            try {
+                const response = await fetch(url, { method: 'HEAD' });
+                return response.ok;
+            } catch (error) {
+                console.error(`Error checking ${url}:`, error);
+                return false;
+            }
+        }
+        
+        // Function to display file status
+        function displayFileStatus(containerId, files) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            files.forEach(file => {
+                const div = document.createElement('div');
+                div.className = 'file-item';
+                div.textContent = `${file}: Checking...`;
+                container.appendChild(div);
+                
+                checkFile(file).then(exists => {
+                    div.textContent = `${file}: ${exists ? '✅ Available' : '❌ Not found'}`;
+                    div.style.color = exists ? 'green' : 'red';
+                });
+            });
+        }
+        
+        // Check JavaScript files
+        displayFileStatus('js-files', [
+            '/js/bootstrap.bundle.min.js',
+            '/js/xlsx.full.min.js',
+            '/js/pdf-lib.min.js',
+            '/js/jszip.min.js',
+            '/test-static.js'
+        ]);
+        
+        // Check CSS files
+        displayFileStatus('css-files', [
+            '/css/bootstrap.min.css'
+        ]);
+    </script>
+</body>
+</html> 

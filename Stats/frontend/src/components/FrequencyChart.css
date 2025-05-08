@@ -1,0 +1,21 @@
+.frequency-chart-container {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.table-cell-highlight {
+  font-weight: bold;
+}
+
+.table-cell-warning {
+  background-color: #ffebee;
+}
+
+.table-cell-na {
+  background-image: repeating-linear-gradient(45deg, #ffffff, #ffffff 8px, #f0f0f0 8px, #f0f0f0 16px);
+}
+
+.table-header {
+  background-color: #f5f5f5;
+  font-weight: bold;
+} 

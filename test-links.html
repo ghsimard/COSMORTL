@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COSMO Applications Access</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; max-width: 1000px; margin: 0 auto; padding: 20px; }
+        h1 { color: #333; }
+        .app-list { list-style: none; padding: 0; }
+        .app-list li { margin: 15px 0; padding: 15px; border: 1px solid #eee; border-radius: 4px; }
+        .app-list a { color: #0066cc; text-decoration: none; font-size: 16px; }
+        .app-list a:hover { text-decoration: underline; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 4px; }
+        .token-display { color: #666; font-size: 12px; margin-top: 5px; }
+        .home-link { background: #e0f0ff; padding: 15px; border-radius: 4px; margin: 20px 0; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; padding: 10px; border-radius: 4px; margin: 15px 0; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460; padding: 10px; border-radius: 4px; margin: 15px 0; }
+        .warning { background-color: #fff3cd; border-color: #ffeeba; color: #856404; padding: 10px; border-radius: 4px; margin: 15px 0; }
+        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+        th, td { padding: 8px; text-align: left; border: 1px solid #ddd; }
+        th { background-color: #f2f2f2; }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; }
+        .status-online { background-color: #28a745; }
+        .status-offline { background-color: #dc3545; }
+        .status-pending { background-color: #ffc107; }
+    </style>
+</head>
+<body>
+    <h1>COSMO Applications Access</h1>
+    
+    <div class="home-link">
+        <p><strong>Official Access Point:</strong> The home page has all application links with proper tokens:</p>
+        <p><a href="http://localhost/">COSMO Home Page</a></p>
+    </div>
+    
+    <div class="info">
+        <p><strong>Simplified Tokens:</strong> We've updated the access tokens to be simpler and easier to use. The current tokens are:</p>
+    </div>
+    
+    <table>
+        <tr>
+            <th>Application</th>
+            <th>Token</th>
+            <th>Access URL</th>
+            <th>Status</th>
+        </tr>
+        <tr>
+            <td>Docentes</td>
+            <td><code>DocToken123</code></td>
+            <td><a href="http://localhost/docentes/DocToken123">Access Docentes</a></td>
+            <td><span class="status-indicator status-pending" id="docentes-status"></span> <span id="docentes-status-text">Checking...</span></td>
+        </tr>
+        <tr>
+            <td>Acudientes</td>
+            <td><code>AcuToken456</code></td>
+            <td><a href="http://localhost/acudientes/AcuToken456">Access Acudientes</a></td>
+            <td><span class="status-indicator status-pending" id="acudientes-status"></span> <span id="acudientes-status-text">Checking...</span></td>
+        </tr>
+        <tr>
+            <td>Estudiantes</td>
+            <td><code>EstToken789</code></td>
+            <td><a href="http://localhost/estudiantes/EstToken789">Access Estudiantes</a></td>
+            <td><span class="status-indicator status-pending" id="estudiantes-status"></span> <span id="estudiantes-status-text">Checking...</span></td>
+        </tr>
+        <tr>
+            <td>Stats</td>
+            <td><code>StatsToken012</code></td>
+            <td><a href="http://localhost/stats/StatsToken012">Access Stats</a></td>
+            <td><span class="status-indicator status-pending" id="stats-status"></span> <span id="stats-status-text">Checking...</span></td>
+        </tr>
+    </table>
+    
+    <h2>API Endpoints</h2>
+    <table>
+        <tr>
+            <th>Service</th>
+            <th>API URL</th>
+            <th>Status</th>
+        </tr>
+        <tr>
+            <td>Docentes API</td>
+            <td><a href="http://localhost/api/docentes">API: Docentes</a></td>
+            <td><span class="status-indicator status-pending" id="api-docentes-status"></span> <span id="api-docentes-status-text">Checking...</span></td>
+        </tr>
+        <tr>
+            <td>Acudientes API</td>
+            <td><a href="http://localhost/api/acudientes">API: Acudientes</a></td>
+            <td><span class="status-indicator status-pending" id="api-acudientes-status"></span> <span id="api-acudientes-status-text">Checking...</span></td>
+        </tr>
+        <tr>
+            <td>Estudiantes API</td>
+            <td><a href="http://localhost/api/estudiantes">API: Estudiantes</a></td>
+            <td><span class="status-indicator status-pending" id="api-estudiantes-status"></span> <span id="api-estudiantes-status-text">Checking...</span></td>
+        </tr>
+        <tr>
+            <td>Stats API</td>
+            <td><a href="http://localhost/api/stats">API: Stats</a></td>
+            <td><span class="status-indicator status-pending" id="api-stats-status"></span> <span id="api-stats-status-text">Checking...</span></td>
+        </tr>
+    </table>
+    
+    <div class="warning" id="troubleshooting-section" style="display: none;">
+        <h3>Troubleshooting</h3>
+        <p>Some services appear to be offline. Here are possible solutions:</p>
+        <ol>
+            <li>Make sure all applications are running with: <code>sudo ./start-all.sh</code></li>
+            <li>Check for port conflicts using: <code>sudo lsof -nP -iTCP -sTCP:LISTEN | grep LISTEN</code></li>
+            <li>Verify database connection for API services</li>
+            <li>Restart the proxy server: <code>./stop-all.sh</code> followed by <code>sudo ./start-all.sh</code></li>
+        </ol>
+    </div>
+    
+    <script>
+        // Function to check if a service is responding
+        async function checkServiceStatus(url, statusElementId, textElementId) {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                
+                const response = await fetch(url, { 
+                    method: 'HEAD',
+                    signal: controller.signal,
+                    mode: 'no-cors'
+                });
+                
+                clearTimeout(timeoutId);
+                
+                const statusElement = document.getElementById(statusElementId);
+                const textElement = document.getElementById(textElementId);
+                
+                statusElement.classList.remove('status-pending');
+                
+                if (response.ok || response.type === 'opaque') {
+                    statusElement.classList.add('status-online');
+                    statusElement.classList.remove('status-offline');
+                    textElement.innerText = 'Online';
+                } else {
+                    statusElement.classList.add('status-offline');
+                    statusElement.classList.remove('status-online');
+                    textElement.innerText = 'Offline';
+                    document.getElementById('troubleshooting-section').style.display = 'block';
+                }
+            } catch (error) {
+                const statusElement = document.getElementById(statusElementId);
+                const textElement = document.getElementById(textElementId);
+                
+                statusElement.classList.remove('status-pending');
+                statusElement.classList.add('status-offline');
+                statusElement.classList.remove('status-online');
+                textElement.innerText = 'Offline';
+                document.getElementById('troubleshooting-section').style.display = 'block';
+            }
+        }
+        
+        // Check the status of all services when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const services = [
+                { url: 'http://localhost/docentes/DocToken123', statusId: 'docentes-status', textId: 'docentes-status-text' },
+                { url: 'http://localhost/acudientes/AcuToken456', statusId: 'acudientes-status', textId: 'acudientes-status-text' },
+                { url: 'http://localhost/estudiantes/EstToken789', statusId: 'estudiantes-status', textId: 'estudiantes-status-text' },
+                { url: 'http://localhost/stats/StatsToken012', statusId: 'stats-status', textId: 'stats-status-text' },
+                { url: 'http://localhost/api/docentes', statusId: 'api-docentes-status', textId: 'api-docentes-status-text' },
+                { url: 'http://localhost/api/acudientes', statusId: 'api-acudientes-status', textId: 'api-acudientes-status-text' },
+                { url: 'http://localhost/api/estudiantes', statusId: 'api-estudiantes-status', textId: 'api-estudiantes-status-text' },
+                { url: 'http://localhost/api/stats', statusId: 'api-stats-status', textId: 'api-stats-status-text' }
+            ];
+            
+            services.forEach(service => {
+                checkServiceStatus(service.url, service.statusId, service.textId);
+            });
+        });
+    </script>
+</body>
+</html> 

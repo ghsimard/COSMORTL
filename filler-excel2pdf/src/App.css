@@ -1,0 +1,105 @@
+.App {
+  text-align: center;
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  font-family: Arial, sans-serif;
+}
+
+h1 {
+  margin-bottom: 20px;
+}
+
+div {
+  margin: 10px 0;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+input[type="file"] {
+  margin: 10px 0;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+h3 {
+  margin-top: 20px;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+li {
+  color: red;
+  margin: 5px 0;
+}
+
+.mapping-section {
+  margin: 20px 0;
+  text-align: left;
+}
+
+.mapping-grid {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.mapping-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.mapping-row label {
+  font-weight: bold;
+}
+
+.mapping-row select {
+  padding: 5px;
+  width: 100%;
+}
+
+.status {
+  margin: 20px 0;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.errors {
+  color: #dc3545;
+  text-align: left;
+  margin: 20px 0;
+}
+
+.errors ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.errors li {
+  margin: 5px 0;
+  padding: 5px;
+  background-color: #f8d7da;
+  border-radius: 4px;
+}
