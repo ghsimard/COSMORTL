@@ -15,6 +15,7 @@ dist/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.example
 
 # IDE and editor files
 .idea/
@@ -29,6 +30,12 @@ logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+proxy-server.log
+server.log
+form-docentes.log
+docentes.log
+form-estudiantes.log
+form-acudientes.log
 
 # Local files
 *.local
@@ -38,4 +45,32 @@ coverage/
 
 # Misc
 .cache/
-.next/ 
+.next/
+
+# Backup and temp directories
+**/backups/
+**/backup*/
+**/tmp/
+**/temp*/
+**/*.bak
+**/*.tmp
+**/*.temp
+
+# Specific project folders
+ExporterExcel2PostgreSQL/backups/
+.app_pids
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+**/*.sqlite
+**/*.sqlite3
+**/*.db
+
+# Binary and compiled files
+*.pdf
+*.exe
+*.dll
+*.so
+*.dylib 
